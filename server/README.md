@@ -24,7 +24,7 @@ Create the tables and initial data set by copy/pasting the migration (note to se
 
 To start a web server for the application, run:
 
-    lein ring server-headless
+    lein run
 
 Open ```http://localhost:3000/index.html``` in a browser.
 
