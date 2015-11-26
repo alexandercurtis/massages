@@ -6,6 +6,12 @@
                :user "massages"
                :password "massages"})
 
+(defn get-names
+  []
+  (->>
+    (jdbc/query db "SELECT name FROM people ORDER BY name ASC")
+    (map :name)))
+
 (defn get-people
   []
   (jdbc/query db "SELECT p.name AS name, max(c.massage_id) AS date FROM people p LEFT JOIN clients c ON p.name = c.people_id WHERE p.active = 1 GROUP BY p.name"))
@@ -36,3 +42,14 @@
   [n]
   (jdbc/query db ["SELECT p.name AS name, max(c.massage_id) AS date FROM people p LEFT JOIN clients c ON p.name = c.people_id WHERE p.active = 1 GROUP BY p.name ORDER BY date LIMIT ?" n]))
 
+(defn get-n-latest-dates
+  [n]
+  (->>
+    (jdbc/query db ["SELECT DISTINCT massage_id FROM clients ORDER BY massage_id DESC LIMIT ?", n])
+    (map :massage_id)))
+
+(defn get-dates
+  [name dates]
+  (let [dates-clause (clojure.string/join "','" dates)]
+    (->> (jdbc/query db [(format "SELECT massage_id FROM clients WHERE people_id = ? AND massage_id IN ('%s')" dates-clause) name])
+         (map :massage_id))))

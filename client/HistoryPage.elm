@@ -22,16 +22,22 @@ onInput address f =
 
 -- MODEL
 
+type alias Booking =
+  { name : String
+  , bookings : List Bool
+  }
 
 type alias Model =
-    { people : List People.Person
+    { recentDates : List String
+    , bookings : List (String, List String)
     }
 
 
 init : (Model, Effects Action)
 init =
-    ({ people = []}
-    , Effects.none
+    ({ recentDates = []
+    ,  bookings = []}
+    , getBookings
     )
 
 
@@ -40,22 +46,22 @@ init =
 
 type Action
     = NoOp
-    | GotPeople (Maybe (List People.Person))
+    | GotBookings (Maybe (List String, (List (String, List String))))
 
 
-sortPeople : List People.Person -> List People.Person
+sortPeople : List Booking -> List Booking
 sortPeople people =
-  let keyFn = (\person -> if (person.lastDate == "never") then "0000-00-00" else person.lastDate) in
-    List.sortBy keyFn people -- TODO: Sort by name if dates are the same
+  let keyFn = (\person -> person.name) in
+    List.sortBy keyFn people
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
-    GotPeople maybePeople ->
+    GotBookings maybePeople ->
       let
-        serverPeople =  sortPeople (Maybe.withDefault [People.Person "EX: maybe : saw can't reach server?" "?"] maybePeople)
+        (dates,bookings) = (Maybe.withDefault ([], []) maybePeople)
       in
-        ( {model | people <- serverPeople}
+        ( {model | bookings = bookings, recentDates = dates}
         , Effects.none
         )
 
@@ -66,21 +72,33 @@ update action model =
 
 -- VIEW
 
-renderPerson : Signal.Address Action -> People.Person -> Html
-renderPerson address person =
-  li
-    [ class "person" ]
-    [ span [ class "name" ] [ text person.name ]
-    , span [ class "date" ] [ text person.lastDate ]
-    ]
-
-
-personList : Signal.Address Action -> List People.Person -> Html
-personList address people =
+renderHeading : List String -> Html
+renderHeading dates =
   let
-    items = List.map (renderPerson address) people
+    titles = List.map (\date -> span [ class "date-header" ] [ text date ]) dates
   in
-    ul [ class "list" ] items
+    li [ class "booking" ] <| (span [class "booked-name" ] [ text "Name" ]) :: titles
+
+row : List String -> (String, List String) -> Html
+row dates (name,h) =
+  let
+    bookings = List.map (\a -> if
+                                 List.member a h
+                               then
+                                 span [ class "booked" ] [ text "" ]
+                               else
+                                 span [ class "not-booked" ] [ text "" ])
+                        dates
+  in
+    li [ class "booking" ] ([ span [ class "booked-name" ] [ text name ] ] ++ bookings)
+
+personList : Signal.Address Action -> List String -> List (String, List String) -> Html
+personList address dates bookings =
+  let
+    heading = renderHeading dates
+    rows = List.map (row dates) bookings
+  in
+    ul [ class "list" ] (heading :: rows)
 
 
 pageHeader : Html
@@ -92,27 +110,39 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [ id "container" ]
     [ pageHeader
-    , personList address model.people
+    , personList address model.recentDates model.bookings
     ]
 
 -- EFFECTS
 
 
+bookingMaker : Maybe String -> Maybe (List String) -> (String, List String)
+bookingMaker n d =
+  ( (Maybe.withDefault "EX: missing name" n), (Maybe.withDefault [] d ))
 
-jsonStringToPerson : String -> Result String People.Person
-jsonStringToPerson t =
-  (JSD.decodeString
-    (JSD.object2
-      People.personMaker
-      (JSD.maybe ("name" := JSD.string))
-      (JSD.maybe ("last-date" := JSD.string)))
-    t)
+wtfigo :  Maybe (List String) -> Maybe (List (String, List String)) -> (List String, List (String, List String))
+wtfigo d h =
+  ( (Maybe.withDefault ["EX: missing dates"] d), (Maybe.withDefault [] h))
 
-personResponseDecoder : Maybe Http.Response -> Result String People.Person
-personResponseDecoder response =
-  case response of
-    Nothing -> Err "No person response from server"
-    Just r ->
-      case r.value of
-        Http.Text t -> jsonStringToPerson t
-        Http.Blob _ -> Err "EX: Person decoder can't handle blob"
+bookingResponseDecoder : JSD.Decoder (List String, (List (String, List String)))
+bookingResponseDecoder =
+  let
+    date =
+      JSD.string
+    person =
+      JSD.object2
+        bookingMaker
+        (JSD.maybe ("name" := JSD.string))
+        (JSD.maybe ("bookings" := (JSD.list JSD.string)))
+  in
+    JSD.object2 wtfigo (JSD.maybe ("dates" := (JSD.list date))) (JSD.maybe ("history" := (JSD.list person)))
+
+getBookingsPlus : Task x (Maybe (List String, (List (String, List String))))
+getBookingsPlus =
+    Http.get bookingResponseDecoder ("http://localhost:3000/api/v1/history")
+    |> Task.toMaybe
+
+getBookings =
+    getBookingsPlus
+    |> Task.map GotBookings
+    |> Effects.task

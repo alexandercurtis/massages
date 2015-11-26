@@ -51,6 +51,7 @@
            (GET "/" [] (response/redirect "/index.html"))
            (GET "/api/v1/people" [] (emit-json (map present (db/get-people))))
            (GET "/api/v1/fill" [] (emit-json (map present (planner/plan))))
+           (GET "/api/v1/history" [] (emit-json (planner/history)))
            (POST "/api/v1/people" [] (fn [{{n :name} :body}]
                                          (prn "Got name" n)
                                          (db/create-person n)

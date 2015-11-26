@@ -18,7 +18,7 @@ body {
 }
 
 #container {
-  width: 500px;
+  width: 545px;
   margin: 50px auto;
   padding: 0px 50px;
 }
@@ -424,4 +424,25 @@ h2.date {
 
 .dropdown-menu li.focussed {
   border: 1px dashed #c5c5c5;
+}
+
+li.booking span.date-header {
+  width:50px;
+  display:inline-block;
+}
+
+li.booking span.booked {
+  width:50px;
+  background-color:green;
+  display:inline-block;
+}
+
+li.booking span.not-booked {
+  width:50px;
+  display:inline-block;
+}
+
+li.booking span.booked-name {
+  width: 200px;
+  display:inline-block;
 }

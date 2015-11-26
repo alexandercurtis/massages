@@ -67,7 +67,7 @@ update action model =
       let
         serverPeople =  sortPeople (Maybe.withDefault [People.Person "EX: maybe : saw can't reach server?" "?"] maybePeople)
       in
-        ( {model | people <- serverPeople, visiblePeople <- filterVisiblePeople model.nameInput serverPeople}
+        ( {model | people = serverPeople, visiblePeople = filterVisiblePeople model.nameInput serverPeople}
         , Effects.none
         )
     Delete name ->
@@ -83,7 +83,7 @@ update action model =
             remainingVisiblePeople =
               List.filter (\person -> person.name /= deletedPerson.name) model.visiblePeople
           in
-            ({ model | people <- remainingPeople, visiblePeople <- remainingVisiblePeople }, Effects.none )
+            ({ model | people = remainingPeople, visiblePeople = remainingVisiblePeople }, Effects.none )
         Err msg -> (model, Effects.none) -- TODO: Report error somewhere
 
     UpdateNameInput currentName ->
@@ -91,7 +91,7 @@ update action model =
         remainingVisiblePeople =
           filterVisiblePeople currentName model.people
       in
-        ({ model | nameInput <- currentName, visiblePeople <- remainingVisiblePeople }, Effects.none)
+        ({ model | nameInput = currentName, visiblePeople = remainingVisiblePeople }, Effects.none)
 
     Add ->
       let
@@ -110,9 +110,9 @@ update action model =
           let
             people = sortPeople (newPerson :: model.people)
           in
-          ({ model | nameInput <- ""
-                   , people <- people
-                   , visiblePeople <- people
+          ({ model | nameInput = ""
+                   , people = people
+                   , visiblePeople = people
                }
                , Effects.none)
         Err msg -> (model, Effects.none) -- TODO: Report error somewhere

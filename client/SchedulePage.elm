@@ -72,12 +72,15 @@ nthMassage xs n =
 
 
 fillSlot' :  Slot -> (List People.Person, List Slot) -> (List People.Person, List Slot)
-fillSlot' slot ((first :: rest), result) = -- TODO: 'as' list
-  case slot of
-    MassageCtor m -> case m.nam of
-                         Available -> (rest, (MassageCtor { m | nam <- Filled first.name } :: result ))
-                         _ -> ((first :: rest), slot :: result)
-    _ -> ((first :: rest), slot :: result)
+fillSlot' slot peeps = -- TODO: 'as' list
+  case peeps of
+    ((first :: rest), result) ->
+      case slot of
+        MassageCtor m -> case m.nam of
+                             Available -> (rest, (MassageCtor { m | nam = Filled first.name } :: result ))
+                             _ -> ((first :: rest), slot :: result)
+        _ -> ((first :: rest), slot :: result)
+    ([], result) -> ([], slot :: result)
 
 fillSlots : List Slot -> List People.Person -> List Slot
 fillSlots slots allPeople =
@@ -252,7 +255,7 @@ clearSlot slots num =
   let
     updateSlot s =
       case s of
-        MassageCtor m -> if m.num == num then (MassageCtor { m | nam <- Available }) else s
+        MassageCtor m -> if m.num == num then (MassageCtor { m | nam = Available }) else s
         Lunch -> s
         Break -> s
   in
@@ -264,8 +267,8 @@ nameToSlot slots num name =
   let
     updateSlot s =
       case s of
-        MassageCtor m -> if m.num == num then (MassageCtor { m | nam <- Filled name }) else
-                         if m.nam == Filled name then (MassageCtor { m | nam <- Available }) else s
+        MassageCtor m -> if m.num == num then (MassageCtor { m | nam = Filled name }) else
+                         if m.nam == Filled name then (MassageCtor { m | nam = Available }) else s
         Lunch -> s
         Break -> s
   in
@@ -277,7 +280,7 @@ removeName slots name =
   let
     updateSlot s =
       case s of
-        MassageCtor m -> if m.nam == Filled name then (MassageCtor { m | nam <- Available }) else s
+        MassageCtor m -> if m.nam == Filled name then (MassageCtor { m | nam = Available }) else s
         Lunch -> s
         Break -> s
   in
@@ -356,7 +359,7 @@ autocompleteDown model =
       Just num -> if num < max then num + 1 else num
       Nothing -> 0
   in
-    {model | autocompleteFocus <- Just newNum}
+    {model | autocompleteFocus = Just newNum}
 
 autocompleteUp : Model -> Model
 autocompleteUp model =
@@ -367,52 +370,52 @@ autocompleteUp model =
       Just num -> if num > 0 then num - 1 else num
       Nothing -> max
   in
-    {model | autocompleteFocus <- Just newNum}
+    {model | autocompleteFocus = Just newNum}
 
 update : Action -> Model -> (Model, Effects Action, Maybe String)
 update action model =
   case (Debug.log "action" action) of
     NoOp -> (model, Effects.none, Nothing)
     Publish -> (model, publish model, Nothing)
-    OnPublish publishResult -> ({ model | published <- True}, Effects.none, Nothing)
+    OnPublish publishResult -> ({ model | published = True}, Effects.none, Nothing)
     Fill -> (model, getFill, Nothing)
     GotFill maybePeople ->
       let
         serverPeople = (Maybe.withDefault [People.Person "EX: maybe : elsewhere saw can't reach server?" "?"] maybePeople)
       in
-        ( {model | slots <- fillSlots model.slots serverPeople}
+        ( {model | slots = fillSlots model.slots serverPeople}
         , Effects.none
         , Nothing
         )
-    UpdateSlotInput num name -> ({ model | editingName <- name, autocompleteOptions <- getAutocompleteOptions model name}, Effects.none, Nothing)
+    UpdateSlotInput num name -> ({ model | editingName = name, autocompleteOptions = getAutocompleteOptions model name}, Effects.none, Nothing)
 
     EditSlot num ->
       let editingName = nameFromSlot model.slots num in
-        ({ model | slotOpen <- True, editingSlotNum <- num, editingName <- editingName, autocompleteFocus <- Nothing, autocompleteOptions <- getAutocompleteOptions model editingName}, Effects.none, Just ("#slot-" ++ toString num))
+        ({ model | slotOpen = True, editingSlotNum = num, editingName = editingName, autocompleteFocus = Nothing, autocompleteOptions = getAutocompleteOptions model editingName}, Effects.none, Just ("#slot-" ++ toString num))
 
     StopEditing ->
       -- copy name from input box to slot
       let
         slots = fillSlot model model.editingName
       in
-        ({ model | slots <- slots, slotOpen <- False}, Effects.task (Task.succeed CeaseEditing), Nothing)
+        ({ model | slots = slots, slotOpen = False}, Effects.task (Task.succeed CeaseEditing), Nothing)
 
     CeaseEditing ->
-      ({ model | editingSlotNum <- -1 }, Effects.none, Nothing)
+      ({ model | editingSlotNum = -1 }, Effects.none, Nothing)
 
-    ClearSlot num -> ({ model | slots <- clearSlot model.slots num}, Effects.none, Nothing)
+    ClearSlot num -> ({ model | slots = clearSlot model.slots num}, Effects.none, Nothing)
 
     AutoCompleteSelected num name ->
       let
         slots = nameToSlot model.slots num name
       in
-        ({model | autocompleteOptions <- [], editingName <- name, slots <- slots, slotOpen <- False}, Effects.none, Nothing)
+        ({model | autocompleteOptions = [], editingName = name, slots = slots, slotOpen = False}, Effects.none, Nothing)
 
     GotPeople maybePeople ->
       let
         serverPeople = (Maybe.withDefault [People.Person "EX: maybe : elsewhere saw can't reach server?" "?"] maybePeople)
       in
-        ( {model | possibleNames <- extractNames serverPeople}
+        ( {model | possibleNames = extractNames serverPeople}
         , Effects.none
         , Nothing
         )
@@ -424,17 +427,17 @@ update action model =
             slotsLessName = removeName model.slots deletedPerson.name
             possibleNamesLessName = List.filter (\p -> p /= deletedPerson.name) model.possibleNames
           in
-            ({ model | slots <- slotsLessName, possibleNames <- possibleNamesLessName }, Effects.none, Nothing )
+            ({ model | slots = slotsLessName, possibleNames = possibleNamesLessName }, Effects.none, Nothing )
         Err msg -> (model, Effects.none, Nothing  ) -- TODO: Report error somewhere
 
     UpdateDateInput currentDate ->
       let newDate = validateDate currentDate model.dateInput in
-        ({ model | dateInput <- newDate }, Effects.none, Nothing)
+        ({ model | dateInput = newDate }, Effects.none, Nothing)
 
-    EditDate editing -> ({ model | editingDate <- Debug.log "editing is" editing}, Effects.none, if editing then Just "#date-0" else Nothing)
+    EditDate editing -> ({ model | editingDate = Debug.log "editing is" editing}, Effects.none, if editing then Just "#date-0" else Nothing)
 
-    TimeIsPassing a -> ({ model | currentTime <- a
-                                , dateInput <- case model.dateInput of
+    TimeIsPassing a -> ({ model | currentTime = a
+                                , dateInput = case model.dateInput of
                                                  Just d -> Just d
                                                  Nothing -> Just (nextMonday a)}
                         , Effects.none
@@ -443,7 +446,7 @@ update action model =
     KeyPressed k -> if
                       k == 27
                     then
-                      ({ model | editingDate <- False, slotOpen <- False}, Effects.none, Nothing)
+                      ({ model | editingDate = False, slotOpen = False}, Effects.none, Nothing)
                     else
                       let
                         autocompleteActive = (List.length model.autocompleteOptions > 0)

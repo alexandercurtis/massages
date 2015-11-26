@@ -59,7 +59,7 @@ INSERT INTO people(name) VALUES ("Ameena Ahsan Lad"        );
 INSERT INTO people(name) VALUES ("Goncarlo Garcia"         );
 INSERT INTO people(name) VALUES ("Juan Goncalves"          );
 INSERT INTO people(name) VALUES ("Irina Popovic"           );
-INSERT INTO people(name) VALUES ("Phillippe Seron"         );
+INSERT INTO people(name) VALUES ("Phillippe Serbon"         );
 INSERT INTO people(name) VALUES ("Fred Quincey"            );
 INSERT INTO people(name) VALUES ("Bella Trueman"           );
 INSERT INTO people(name) VALUES ("Daphne Scales"           );
@@ -114,7 +114,7 @@ INSERT INTO clients(people_id,massage_id,slot) VALUES ("Ameena Ahsan Lad","2015-
 INSERT INTO clients(people_id,massage_id,slot) VALUES ("Goncarlo Garcia","2015-02-02",4);
 INSERT INTO clients(people_id,massage_id,slot) VALUES ("Juan Goncalves","2015-03-02",4);
 INSERT INTO clients(people_id,massage_id,slot) VALUES ("Irina Popovic","2015-03-30",4);
-INSERT INTO clients(people_id,massage_id,slot) VALUES ("Phillippe Seron","2015-04-27",4);
+INSERT INTO clients(people_id,massage_id,slot) VALUES ("Phillippe Serbon","2015-04-27",4);
 INSERT INTO clients(people_id,massage_id,slot) VALUES ("Fred Quincey","2015-05-25",4);
 INSERT INTO clients(people_id,massage_id,slot) VALUES ("Bella Trueman","2015-06-22",4);
 INSERT INTO clients(people_id,massage_id,slot) VALUES ("Daphne Scales","2015-08-03",4);

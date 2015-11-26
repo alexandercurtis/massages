@@ -68,7 +68,7 @@ type Action
     | DelegateToHistoryPage HistoryPage.Action
     | GotPeople (Maybe (List People.Person))
     | TimeIsPassing Float
-    | KeyPressed Int
+--    | KeyPressed Int
     | KeysDown (Set.Set Int)
 
 update : Action -> Model -> (Model, Effects Action)
@@ -78,10 +78,10 @@ update action model =
     NoOp1 _ -> (model,Effects.none)
     DelegateToPrimaryNav primaryNavAction ->
       let (m,e) = PrimaryNav.update primaryNavAction model.primaryNav in
-        ({ model | primaryNav <- m, activePage <-m.selected }, Effects.map DelegateToPrimaryNav e)
+        ({ model | primaryNav = m, activePage = m.selected }, Effects.map DelegateToPrimaryNav e)
     DelegateToSchedulePage schedulePageAction ->
       let (m,e,f) = SchedulePage.update schedulePageAction model.schedulePage in
-        ({ model | schedulePage <- m }, Effects.batch [ Effects.map DelegateToSchedulePage e
+        ({ model | schedulePage = m }, Effects.batch [ Effects.map DelegateToSchedulePage e
                                                         , case f of
                                                             Nothing -> Effects.none
                                                             Just s -> Effects.map NoOp1 (Signal.send model.focusAddress s |> Effects.task) ])
@@ -91,31 +91,30 @@ update action model =
         PeoplePage.PersonDeleted personResult ->
           let (pm, pe) = PeoplePage.update peoplePageAction model.peoplePage
               (sm, se, sf) = SchedulePage.update (SchedulePage.PersonDeleted personResult) model.schedulePage
-          in ({ model | peoplePage <- pm, schedulePage <- sm }, Effects.batch [ Effects.map DelegateToPeoplePage pe
+          in ({ model | peoplePage = pm, schedulePage = sm }, Effects.batch [ Effects.map DelegateToPeoplePage pe
                                                                               , Effects.map DelegateToSchedulePage se
                                                                               , case sf of
                                                                                   Nothing -> Effects.none
                                                                                   Just s -> Effects.map NoOp1 (Signal.send model.focusAddress s |> Effects.task) ] )
         _ -> let (m, e) = PeoplePage.update peoplePageAction model.peoplePage
-             in ({ model | peoplePage <- m }, Effects.map DelegateToPeoplePage e)
+             in ({ model | peoplePage = m }, Effects.map DelegateToPeoplePage e)
 
     DelegateToHistoryPage historyPageAction ->
       let (m,e) = HistoryPage.update historyPageAction model.historyPage in
-        ({ model | historyPage <- m }, Effects.map DelegateToHistoryPage e)
+        ({ model | historyPage = m }, Effects.map DelegateToHistoryPage e)
 
     GotPeople maybePeople ->
       let (pm, pe) = PeoplePage.update (PeoplePage.GotPeople maybePeople) model.peoplePage
           (sm, se, sf) = SchedulePage.update (SchedulePage.GotPeople maybePeople) model.schedulePage
-          (hm, he) = HistoryPage.update (HistoryPage.GotPeople maybePeople) model.historyPage
+        --  (hm, he) = HistoryPage.update (HistoryPage.GotPeople maybePeople) model.historyPage
       in
-        ({ model | peoplePage <- pm, schedulePage <- sm, historyPage <- hm }, Effects.batch [ Effects.map DelegateToPeoplePage pe
-                                                                        , Effects.map DelegateToSchedulePage se
-                                                                        , Effects.map DelegateToHistoryPage he ] )
+        ({ model | peoplePage = pm, schedulePage = sm }, Effects.batch [ Effects.map DelegateToPeoplePage pe
+                                                                        , Effects.map DelegateToSchedulePage se ] )
 
     TimeIsPassing t ->
       -- TODO: DRY (see DelegateToSchedulePage)
       let (m,e,f) = SchedulePage.update (SchedulePage.TimeIsPassing t) model.schedulePage in
-        ({ model | schedulePage <- m }, Effects.batch [ Effects.map DelegateToSchedulePage e
+        ({ model | schedulePage = m }, Effects.batch [ Effects.map DelegateToSchedulePage e
                                                         , case f of
                                                             Nothing -> Effects.none
                                                             Just s -> Effects.map NoOp1 (Signal.send model.focusAddress s |> Effects.task) ])
@@ -127,15 +126,15 @@ update action model =
         ltPressed = Set.member 37 ks
         rtPressed = Set.member 39 ks
         entPressed = Set.member 13 ks
-        (sm, se, sf) = if | escPressed -> SchedulePage.update (SchedulePage.KeyPressed 27) model.schedulePage
-                          | entPressed -> SchedulePage.update (SchedulePage.KeyPressed 13) model.schedulePage
-                          | upPressed -> SchedulePage.update (SchedulePage.KeyPressed 38) model.schedulePage
-                          | dnPressed -> SchedulePage.update (SchedulePage.KeyPressed 40) model.schedulePage
-                          | ltPressed -> SchedulePage.update (SchedulePage.KeyPressed 37) model.schedulePage
-                          | rtPressed -> SchedulePage.update (SchedulePage.KeyPressed 39) model.schedulePage
-                          | otherwise -> (model.schedulePage, Effects.none, Nothing)
+        (sm, se, sf) = if escPressed then SchedulePage.update (SchedulePage.KeyPressed 27) model.schedulePage
+                       else if entPressed then SchedulePage.update (SchedulePage.KeyPressed 13) model.schedulePage
+                       else if upPressed then SchedulePage.update (SchedulePage.KeyPressed 38) model.schedulePage
+                       else if dnPressed then SchedulePage.update (SchedulePage.KeyPressed 40) model.schedulePage
+                       else if ltPressed then SchedulePage.update (SchedulePage.KeyPressed 37) model.schedulePage
+                       else if rtPressed then SchedulePage.update (SchedulePage.KeyPressed 39) model.schedulePage
+                       else (model.schedulePage, Effects.none, Nothing)
       in
-        ({model | schedulePage <- sm}, Effects.map DelegateToSchedulePage se)
+        ({model | schedulePage = sm}, Effects.map DelegateToSchedulePage se)
 
 
 

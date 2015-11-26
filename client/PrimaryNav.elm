@@ -27,8 +27,9 @@ type Action
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
+    NoOp -> (model, Effects.none)
     OptionSelected option ->
-      ({ model | selected <- option }, Effects.none)
+      ({ model | selected = option }, Effects.none)
 
 -- VIEW
 
