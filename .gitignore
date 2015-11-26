@@ -4,3 +4,6 @@
 /server/resources/public/js/app/app.js
 /server/target/
 TODO.md
+/server/.lein-repl-history
+
+/server/resources/public/js/app/app/js
